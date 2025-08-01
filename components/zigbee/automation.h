@@ -17,6 +17,13 @@ class ZigBeeJoinTrigger : public Trigger<> {
   }
 };
 
+template<typename Ts> class ZigBeeIdentTrigger : public Trigger<Ts> {
+ public:
+  explicit ZigBeeIdentTrigger(ZigBeeComponent *parent) {
+    parent->add_on_ident_callback([this](Ts x) { this->trigger(x); });
+  }
+};
+
 template<typename... Ts> class ResetZigbeeAction : public Action<Ts...>, public Parented<ZigBeeComponent> {
  public:
   void play(Ts... x) override { this->parent_->reset(); }

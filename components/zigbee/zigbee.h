@@ -90,12 +90,14 @@ class ZigBeeComponent : public Component {
 #endif
 
   void add_on_join_callback(std::function<void()> &&callback) { this->on_join_callback_.add(std::move(callback)); }
+  void add_on_ident_callback(std::function<void(uint16_t)> &&callback) { this->on_ident_callback_.add(std::move(callback)); }
 
   bool is_started() { return this->started; }
   bool connected = false;
   bool started = false;
 
   CallbackManager<void()> on_join_callback_{};
+  CallbackManager<void(uint16_t)> on_ident_callback_{};
   std::deque<std::tuple<ZigBeeAttribute *, esp_zb_zcl_reporting_info_t>> reporting_list;
   struct {
     std::string model;

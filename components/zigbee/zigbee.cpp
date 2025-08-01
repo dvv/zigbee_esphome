@@ -265,10 +265,15 @@ static esp_err_t zb_action_handler(esp_zb_core_action_callback_id_t callback_id,
 }
 
 void ZigBeeComponent::handle_attribute(esp_zb_device_cb_common_info_t info, esp_zb_zcl_attribute_t attribute) {
+ESP_LOGW(TAG, "HATTR? %d.%d.%d := [%04X]", info.dst_endpoint, info.cluster, attribute.id, *((uint32_t*)(attribute.data.value)));
   if (this->attributes_.find({info.dst_endpoint, info.cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE, attribute.id}) !=
       this->attributes_.end()) {
+ESP_LOGW(TAG, "HATTR! %d.%d.%d := [%04X]", info.dst_endpoint, info.cluster, attribute.id, *((uint32_t*)(attribute.data.value)));
     this->attributes_[{info.dst_endpoint, info.cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE, attribute.id}]->on_value(
         attribute);
+  // identify?
+  } else if (info.cluster == 0x0003 && attribute.id == 0x00) {
+    this->on_ident_callback_.call(*((uint16_t*)(attribute.data.value)));
   }
 }
 
@@ -280,10 +285,10 @@ void ZigBeeComponent::create_default_cluster(uint8_t endpoint_id, esp_zb_ha_stan
 void ZigBeeComponent::add_cluster(uint8_t endpoint_id, uint16_t cluster_id, uint8_t role) {
   esp_zb_attribute_list_t *attr_list;
   switch (cluster_id) {
-    case 0:
+    case 0x0000:
       attr_list = create_basic_cluster_();
       break;
-    case 3:
+    case 0x0003:
       attr_list = create_ident_cluster_();
       break;
     default:

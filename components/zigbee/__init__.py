@@ -43,6 +43,7 @@ CONF_NUM = "num"
 CONF_CLUSTERS = "clusters"
 CONF_ON_JOIN = "on_join"
 CONF_IDENT_TIME = "ident_time"
+CONF_ON_IDENT = "on_ident"
 CONF_MANUFACTURER = "manufacturer"
 CONF_ATTRIBUTES = "attributes"
 CONF_ROLE = "role"
@@ -59,6 +60,7 @@ zigbee_ns = cg.esphome_ns.namespace("zigbee")
 ZigBeeComponent = zigbee_ns.class_("ZigBeeComponent", cg.Component)
 ZigBeeAttribute = zigbee_ns.class_("ZigBeeAttribute", cg.Component)
 ZigBeeJoinTrigger = zigbee_ns.class_("ZigBeeJoinTrigger", automation.Trigger)
+ZigBeeIdentTrigger = zigbee_ns.class_("ZigBeeIdentTrigger", automation.Trigger)
 ZigBeeOnValueTrigger = zigbee_ns.class_(
     "ZigBeeOnValueTrigger", automation.Trigger.template(int), cg.Component
 )
@@ -193,6 +195,11 @@ CONFIG_SCHEMA = cv.All(
                 CONF_DATE, default=datetime.datetime.now().strftime("%Y%m%d")
             ): cv.string,
             cv.Optional(CONF_IDENT_TIME): cv.int_,
+            cv.Optional(CONF_ON_IDENT): automation.validate_automation(
+                {
+                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(ZigBeeIdentTrigger),
+                }
+            ),
             cv.Optional(CONF_POWER_SUPPLY, default=0): cv.int_,  # make enum
             cv.Optional(CONF_VERSION, default=0): cv.int_,
             cv.Optional(CONF_AREA, default=0): cv.int_,  # make enum
@@ -269,6 +276,11 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_ON_JOIN): automation.validate_automation(
                 {
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(ZigBeeJoinTrigger),
+                }
+            ),
+            cv.Optional(CONF_ON_IDENT): automation.validate_automation(
+                {
+                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(ZigBeeIdentTrigger),
                 }
             ),
         }
@@ -427,6 +439,15 @@ async def to_code(config):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID], var)
         await automation.build_automation(trigger, [], conf)
 
+    for conf in config.get(CONF_ON_IDENT, []):
+        trigger = cg.new_Pvariable(
+            conf[CONF_TRIGGER_ID],
+            cg.TemplateArguments(get_c_type("U16")),
+            var
+        )
+        await automation.build_automation(
+            trigger, [(get_c_type("U16"), "x")], conf
+        )
 
 ZIGBEE_ACTION_SCHEMA = cv.Schema(
     {
